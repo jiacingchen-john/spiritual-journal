@@ -484,6 +484,17 @@
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; }
   }
+
+  [hidden] { display: none !important; }
+  button:disabled { opacity: .55; cursor: default; }
+  .account-card { padding: 18px; margin-bottom: 18px; }
+  .account-card h2 { font-size: 16px; margin: 0 0 12px; }
+  .account-card p { font-size: 12px; line-height: 1.7; color: var(--muted); }
+  .account-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .account-actions button { flex: 1; min-height: 42px; }
+  #accountEmail { overflow-wrap: anywhere; }
+  #syncStatus { min-height: 1.7em; }
+  #saveError { color: var(--danger); font-size: 13px; line-height: 1.7; }
 </style>
 </head>
 <body>
@@ -493,6 +504,31 @@
       <div class="today-date" id="todayDate"></div>
     </div>
 
+
+    <section class="card account-card" aria-label="帳號與同步">
+      <form id="loginForm">
+        <h2>登入，讓紀錄隨身同行。</h2>
+        <div class="field">
+          <label for="emailInput">Email</label>
+          <input id="emailInput" type="email" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="passwordInput">密碼</label>
+          <input id="passwordInput" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="primary-btn" id="loginButton" type="submit" disabled>登入</button>
+        <p>使用已建立的靈修帳號登入。</p>
+      </form>
+      <div id="accountPanel" hidden>
+        <h2>我的雲端紀錄</h2>
+        <p id="accountEmail"></p>
+        <div class="account-actions">
+          <button class="ghost-btn" id="refreshButton" type="button">重新同步</button>
+          <button class="ghost-btn" id="logoutButton" type="button">登出</button>
+        </div>
+      </div>
+      <p id="syncStatus" role="status" aria-live="polite">正在準備登入…</p>
+    </section>
     <section class="hero">
       <div class="eyebrow">TODAY</div>
       <h1 id="heroTitle">今天，留一點時間給自己。</h1>
@@ -559,7 +595,7 @@
       </div>
     </section>
 
-    <div class="footer-note" id="storageNote">紀錄目前儲存在這個瀏覽器中。</div>
+    <div class="footer-note" id="storageNote">紀錄儲存在你的雲端帳號。儲存需要網路連線。</div>
   </main>
 
   <div class="overlay" id="overlay"></div>
@@ -617,7 +653,7 @@
         <div class="custom-time" id="customTimeWrap">
           <input id="customTimeInput" type="number" min="1" max="1440" inputmode="numeric" placeholder="輸入分鐘數">
         </div>
-        <div class="error" id="timeError">請選擇或輸入靈修時間</div>
+        <div class="error" id="timeError">請輸入 1～1440 的整數分鐘</div>
       </div>
 
       <div class="field">
@@ -626,58 +662,27 @@
       </div>
 
       <div class="sheet-actions">
+        <p id="saveError" role="alert" hidden></p>
         <button type="submit" class="primary-btn" id="saveButton">儲存紀錄</button>
         <button type="button" class="delete-btn" id="deleteButton" style="display:none;">刪除這筆紀錄</button>
       </div>
     </form>
   </section>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script>
 (function () {
   'use strict';
 
-  // ---------- Data layer ----------
-  // 目前先使用 localStorage。未來接 Supabase 時，只需要替換這一區。
-  var STORAGE_KEY = 'spiritual_journal_v2';
-  var LEGACY_KEY = 'spiritual_checkins_v1';
-
-  function loadData() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw) || {};
-
-      var legacyRaw = localStorage.getItem(LEGACY_KEY);
-      if (!legacyRaw) return {};
-
-      var legacy = JSON.parse(legacyRaw) || {};
-      var migrated = {};
-      Object.keys(legacy).forEach(function (date) {
-        var item = legacy[date] || {};
-        migrated[date] = {
-          topic: item.topic || '',
-          song: item.song || '',
-          minutes: getMinutes(item),
-          note: item.note || item.wave || '',
-          savedAt: item.savedAt || new Date().toISOString()
-        };
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-      return migrated;
-    } catch (err) {
-      return {};
-    }
-  }
-
-  function persistData() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      return true;
-    } catch (err) {
-      return false;
-    }
-  }
-
-  var data = loadData();
+  // Cloud records only. Existing local journal keys are left untouched.
+  var data = {};
+  var client = null;
+  var user = null;
+  var ready = false;
+  var busy = false;
+  var loading = false;
+  var generation = 0;
+  var loadSerial = 0;
 
   // ---------- Date helpers ----------
   function pad(n) { return n < 10 ? '0' + n : String(n); }
@@ -815,7 +820,7 @@
       if (data[key]) cell.classList.add('done');
 
       cell.innerHTML = data[key] ? checkIcon : String(day);
-      cell.disabled = isFuture;
+      cell.disabled = isFuture || !ready || busy || loading;
       if (!isFuture) {
         cell.addEventListener('click', function (selectedKey) {
           return function () { openRecord(selectedKey); };
@@ -845,22 +850,24 @@
     renderTop();
     renderCalendar();
     renderReview();
+    updateControls();
   }
 
   function openSheet() {
     overlay.classList.add('open');
     sheet.classList.add('open');
     document.body.style.overflow = 'hidden';
+    updateControls();
   }
 
-  function closeSheet() {
+  function closeSheet(force) {
+    if (busy && force !== true) return;
     overlay.classList.remove('open');
     sheet.classList.remove('open');
     document.body.style.overflow = '';
-    setTimeout(function () {
-      currentDateKey = null;
-      resetTimeSelection();
-    }, 220);
+    currentDateKey = null;
+    resetTimeSelection();
+    updateControls();
   }
 
   function emptyOr(value) {
@@ -913,6 +920,7 @@
   }
 
   function showEdit(key) {
+    $('saveError').hidden = true;
     currentDateKey = key;
     var entry = data[key] || {};
     $('sheetTitle').textContent = data[key] ? '編輯・' + formatLongDate(key) : formatLongDate(key);
@@ -938,6 +946,7 @@
   }
 
   function openRecord(key) {
+    if (!ready || busy || loading) return;
     if (data[key]) showView(key);
     else showEdit(key);
   }
@@ -961,43 +970,69 @@
     });
   });
 
-  $('editMode').addEventListener('submit', function (event) {
+  $('editMode').addEventListener('submit', async function (event) {
     event.preventDefault();
-    if (!currentDateKey) return;
-
-    var minutes = 0;
-    if (selectedMinutes === 'custom') {
-      minutes = parseInt($('customTimeInput').value, 10);
-    } else if (typeof selectedMinutes === 'number') {
-      minutes = selectedMinutes;
-    }
-
-    if (!minutes || minutes < 1) {
+    if (!currentDateKey || !ready || busy || loading || !user) return;
+    var minutes = selectedMinutes === 'custom' ? Number($('customTimeInput').value) : selectedMinutes;
+    if (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440) {
       $('timeError').style.display = 'block';
       return;
     }
-
     $('timeError').style.display = 'none';
-    data[currentDateKey] = {
-      topic: $('topicInput').value.trim(),
-      song: $('songInput').value.trim(),
-      minutes: minutes,
-      note: $('noteInput').value.trim(),
-      savedAt: new Date().toISOString()
+    $('saveError').hidden = true;
+    var key = currentDateKey;
+    var owner = user.id;
+    var token = generation;
+    var entry = {
+      user_id: owner, checkin_date: key,
+      topic: $('topicInput').value.trim(), song: $('songInput').value.trim(),
+      minutes: minutes, note: $('noteInput').value.trim(), saved_at: new Date().toISOString()
     };
-
-    persistData();
-    render();
-    showView(currentDateKey);
+    busy = true;
+    updateControls();
+    status('正在儲存到雲端…');
+    try {
+      var result = await client.from('checkins').upsert(entry, { onConflict: 'user_id,checkin_date' })
+        .select('checkin_date,topic,song,minutes,note,saved_at').single();
+      if (result.error) throw result.error;
+      if (token !== generation) return;
+      data[key] = fromRow(result.data);
+      status('已儲存到雲端。');
+      showView(key);
+    } catch (error) {
+      if (token !== generation) return;
+      $('saveError').textContent = '儲存未完成，輸入內容仍保留。' + errorText(error);
+      $('saveError').hidden = false;
+      status('儲存未完成，請重試。', true);
+    } finally {
+      if (token === generation) { busy = false; render(); }
+    }
   });
 
-  $('deleteButton').addEventListener('click', function () {
-    if (!currentDateKey || !data[currentDateKey]) return;
-    if (!window.confirm('確定要刪除這筆靈修紀錄嗎？')) return;
-    delete data[currentDateKey];
-    persistData();
-    closeSheet();
-    render();
+  $('deleteButton').addEventListener('click', async function () {
+    if (!currentDateKey || !data[currentDateKey] || !ready || busy || loading || !user) return;
+    if (!window.confirm('確定要刪除這筆靈修紀錄嗎？雲端紀錄也會刪除。')) return;
+    var key = currentDateKey;
+    var token = generation;
+    busy = true;
+    updateControls();
+    $('saveError').hidden = true;
+    try {
+      var result = await client.from('checkins').delete()
+        .eq('user_id', user.id).eq('checkin_date', key).select('checkin_date');
+      if (result.error) throw result.error;
+      if (!result.data || result.data.length !== 1) throw new Error('這筆紀錄可能已在其他裝置刪除，請關閉視窗後重新同步。');
+      if (token !== generation) return;
+      delete data[key];
+      closeSheet(true);
+      status('已從雲端刪除。');
+    } catch (error) {
+      if (token !== generation) return;
+      $('saveError').textContent = '刪除未完成。' + errorText(error);
+      $('saveError').hidden = false;
+    } finally {
+      if (token === generation) { busy = false; render(); }
+    }
   });
 
   $('prevMonth').addEventListener('click', function () {
@@ -1018,8 +1053,174 @@
     if (event.key === 'Escape' && sheet.classList.contains('open')) closeSheet();
   });
 
-  render();
+  function status(message, failed) {
+    $('syncStatus').textContent = message;
+    $('syncStatus').style.color = failed ? 'var(--danger)' : '';
+  }
+
+  function errorText(error) {
+    if (!navigator.onLine) return '目前沒有網路，請連線後重試。';
+    var message = error && error.message || '';
+    if (/Invalid login credentials/i.test(message)) return 'Email 或密碼不正確，請重新輸入。';
+    if (/Email not confirmed/i.test(message)) return '帳號尚未確認，請檢查 Supabase 的使用者確認狀態。';
+    if (/fetch|network|timeout|abort/i.test(message)) return '連線未完成，請稍後重試。';
+    if (/permission|policy|row.level|schema cache|does not exist/i.test(message)) return '資料表或存取權限需要確認，請把這則訊息告訴協助你設定的人：' + message;
+    return message || '請稍後重試。';
+  }
+
+  function fromRow(row) {
+    return { topic: row.topic, song: row.song, minutes: row.minutes, note: row.note, savedAt: row.saved_at };
+  }
+
+  function updateControls() {
+    todayButton.disabled = !ready || busy || loading;
+    if (!user) todayButton.textContent = '請先登入以開始紀錄';
+    $('loginForm').hidden = !!user;
+    $('accountPanel').hidden = !user;
+    $('accountEmail').textContent = user ? user.email : '';
+    $('loginButton').disabled = !client || busy;
+    $('refreshButton').disabled = busy || loading || sheet.classList.contains('open');
+    $('logoutButton').disabled = busy;
+    document.querySelectorAll('#editMode input, #editMode textarea, #editMode button').forEach(function (el) {
+      el.disabled = busy || !ready;
+    });
+    $('closeSheet').disabled = busy;
+  }
+
+  async function syncRecords() {
+    if (!user || busy || loading || sheet.classList.contains('open')) return;
+    var owner = user.id;
+    var token = generation;
+    var serial = ++loadSerial;
+    loading = true;
+    render();
+    status('正在讀取雲端紀錄…');
+    try {
+      var next = {};
+      // Explicit pagination prevents silently truncating a long journal.
+      for (var offset = 0; ; offset += 500) {
+        var result = await client.from('checkins')
+          .select('checkin_date,topic,song,minutes,note,saved_at')
+          .eq('user_id', owner).order('checkin_date').range(offset, offset + 499);
+        if (result.error) throw result.error;
+        if (token !== generation || serial !== loadSerial) return;
+        result.data.forEach(function (row) { next[row.checkin_date] = fromRow(row); });
+        if (result.data.length < 500) break;
+      }
+      data = next;
+      ready = true;
+      status('已同步雲端紀錄。');
+    } catch (error) {
+      if (token !== generation || serial !== loadSerial) return;
+      ready = false;
+      status('同步未完成。' + errorText(error) + ' 可按「重新同步」。', true);
+    } finally {
+      if (token === generation && serial === loadSerial) { loading = false; render(); }
+    }
+  }
+
+  function acceptSession(session) {
+    var next = session && session.user || null;
+    if ((user && user.id) === (next && next.id)) return;
+    generation++;
+    loadSerial++;
+    user = next;
+    data = {};
+    ready = false;
+    busy = false;
+    loading = false;
+    closeSheet(true);
+    $('passwordInput').value = '';
+    $('topicInput').value = '';
+    $('songInput').value = '';
+    $('noteInput').value = '';
+    ['viewTopic', 'viewSong', 'viewMinutes', 'viewNote'].forEach(function (id) { $(id).textContent = ''; });
+    render();
+    status(user ? '正在讀取雲端紀錄…' : '請登入，查看你的雲端紀錄。');
+    // Keep asynchronous Supabase calls outside the auth event callback.
+    if (user) setTimeout(syncRecords, 0);
+  }
+
+  $('loginForm').addEventListener('submit', async function (event) {
+    event.preventDefault();
+    if (!client || busy) return;
+    busy = true;
+    updateControls();
+    status('正在登入…');
+    try {
+      var result = await client.auth.signInWithPassword({
+        email: $('emailInput').value.trim(), password: $('passwordInput').value
+      });
+      if (result.error) throw result.error;
+      acceptSession(result.data.session);
+      $('passwordInput').value = '';
+    } catch (error) {
+      status(errorText(error), true);
+    } finally {
+      busy = false;
+      updateControls();
+    }
+  });
+
+  $('logoutButton').addEventListener('click', async function () {
+    if (busy) return;
+    if (sheet.classList.contains('open') && editMode.style.display !== 'none' &&
+        !window.confirm('登出會捨棄尚未儲存的輸入，確定登出嗎？')) return;
+    busy = true;
+    updateControls();
+    try {
+      var result = await client.auth.signOut({ scope: 'local' });
+      if (result.error) throw result.error;
+      acceptSession(null);
+    } catch (error) {
+      status('登出未完成。' + errorText(error), true);
+    } finally { busy = false; updateControls(); }
+  });
+  $('refreshButton').addEventListener('click', syncRecords);
+  window.addEventListener('focus', syncRecords);
+  window.addEventListener('online', syncRecords);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') syncRecords();
+  });
+  window.addEventListener('beforeunload', function (event) {
+    if (busy || (sheet.classList.contains('open') && editMode.style.display !== 'none')) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  });
+
+  async function initialize() {
+    render();
+    if (!window.supabase) {
+      status('登入元件載入失敗，請確認網路後重新整理頁面。', true);
+      return;
+    }
+    try {
+      client = window.supabase.createClient(
+        'https://ejsiwgiusjwvlaumagtc.supabase.co',
+        'sb_publishable_GvG7xTMPl9qMBvS0q4w9lQ_SqWhlCzF',
+        { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+          global: { fetch: function (input, options) {
+            var controller = new AbortController();
+            var timer = setTimeout(function () { controller.abort(); }, 20000);
+            return fetch(input, Object.assign({}, options, { signal: controller.signal }))
+              .finally(function () { clearTimeout(timer); });
+          } }
+        }
+      );
+      client.auth.onAuthStateChange(function (_event, session) { acceptSession(session); });
+      var result = await client.auth.getSession();
+      if (result.error) throw result.error;
+      acceptSession(result.data.session);
+      if (!user) status('請登入，查看你的雲端紀錄。');
+    } catch (error) {
+      status('初始化未完成。' + errorText(error), true);
+    }
+    updateControls();
+  }
+  initialize();
 })();
 </script>
 </body>
 </html>
+
