@@ -3,25 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FFF8E9">
+<meta name="theme-color" content="#FAF7F0">
 <title>靈修紀錄 2.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #FFF8E9;
-    --surface: #FFFEFA;
-    --surface-soft: #FFF0D1;
-    --ink: #52371F;
-    --muted: #806344;
-    --gold: #986018;
-    --gold-soft: #FFE2A3;
-    --green: #81501D;
-    --green-soft: #FFE8B5;
+    --bg: #FAF7F0;
+    --surface: #FFFFFF;
+    --surface-soft: #F3EFE5;
+    --ink: #2D3329;
+    --muted: #707568;
+    --gold: #B7863A;
+    --gold-soft: #F0E1C5;
+    --green: #5F785A;
+    --green-soft: #DBE6D6;
     --danger: #AC4931;
-    --border: #EED5A5;
-    --shadow: 0 12px 32px rgba(140, 90, 28, 0.07);
+    --border: #E5DFD0;
+    --shadow: 0 12px 32px rgba(55, 48, 31, 0.035);
     --radius-lg: 22px;
     --radius-md: 16px;
     --font-display: 'Fraunces', Georgia, serif;
@@ -31,9 +31,7 @@
   * { box-sizing: border-box; }
   html, body { margin: 0; min-height: 100%; }
   body {
-    background:
-      radial-gradient(circle at top, rgba(255, 221, 151, 0.55), transparent 34%),
-      var(--bg);
+    background: var(--bg);
     color: var(--ink);
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
@@ -71,7 +69,7 @@
   }
 
   .hero {
-    background: rgba(255, 254, 250, 0.96);
+    background: #FFFFFF;
     border: 1px solid var(--border);
     border-radius: 26px;
     padding: 26px 22px 22px;
@@ -81,7 +79,7 @@
   .eyebrow {
     font-size: 12px;
     font-weight: 700;
-    color: var(--gold);
+    color: #896124;
     letter-spacing: 0.12em;
     margin-bottom: 10px;
   }
@@ -118,8 +116,9 @@
   .ghost-btn:active { transform: scale(0.985); }
 
   .primary-btn {
-    background: #F3C66E;
-    color: var(--ink);
+    background: var(--gold);
+    color: #FFFFFF;
+    font-size: 19px;
     width: 100%;
   }
 
@@ -184,10 +183,10 @@
   }
 
   .card {
-    background: rgba(255, 254, 250, 0.96);
+    background: #FFFFFF;
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    box-shadow: 0 8px 24px rgba(140, 90, 28, 0.04);
+    box-shadow: 0 8px 24px rgba(55, 48, 31, 0.025);
   }
 
   .calendar-card { padding: 18px 14px 14px; }
@@ -253,7 +252,7 @@
 
   .day-cell.empty { visibility: hidden; }
   .day-cell.today { border-color: var(--gold); }
-  .day-cell.future { color: #C4AA83; cursor: default; }
+  .day-cell.future { color: #C7C4B8; cursor: default; }
   .day-cell.done {
     background: var(--green-soft);
     color: var(--green);
@@ -305,7 +304,7 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(76, 49, 23, 0.30);
+    background: rgba(39, 48, 38, 0.30);
     opacity: 0;
     pointer-events: none;
     transition: opacity .2s ease;
@@ -327,7 +326,7 @@
     border-radius: 26px 26px 0 0;
     padding: 20px 18px calc(24px + env(safe-area-inset-bottom, 0px));
     z-index: 21;
-    box-shadow: 0 -18px 50px rgba(76, 49, 23, 0.16);
+    box-shadow: 0 -18px 50px rgba(25, 32, 24, 0.16);
   }
 
   .sheet.open { transform: translate(-50%, 0); }
@@ -381,7 +380,7 @@
     white-space: pre-wrap;
   }
 
-  .view-empty { color: #927757; }
+  .view-empty { color: #909487; }
 
   .sheet-actions {
     display: grid;
@@ -419,7 +418,7 @@
   .field input:focus,
   .field textarea:focus {
     border-color: var(--gold);
-    box-shadow: 0 0 0 3px rgba(220, 153, 43, 0.18);
+    box-shadow: 0 0 0 3px rgba(183, 134, 58, 0.16);
   }
 
   .field textarea {
@@ -448,7 +447,7 @@
   .time-chip.active {
     border-color: var(--gold);
     background: var(--gold-soft);
-    color: #754811;
+    color: #79551E;
   }
 
   .custom-time {
