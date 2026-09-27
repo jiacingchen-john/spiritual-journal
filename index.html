@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F4E8">
+<title>靈修紀錄 2.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F8F4E8;
+    --surface: #FFFDFC;
+    --surface-soft: #F0EBDD;
+    --ink: #283128;
+    --muted: #73796E;
+    --gold: #B7863E;
+    --gold-soft: #EEDFC1;
+    --green: #5F785A;
+    --green-soft: #DEE8D9;
+    --danger: #A95D48;
+    --border: #E6DECA;
+    --shadow: 0 12px 32px rgba(55, 48, 31, 0.07);
+    --radius-lg: 22px;
+    --radius-md: 16px;
+    --font-display: 'Fraunces', Georgia, serif;
+    --font-body: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background:
+      radial-gradient(circle at top, rgba(238, 223, 193, 0.45), transparent 34%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  button, input, textarea { font: inherit; }
+  button { -webkit-tap-highlight-color: transparent; }
+
+  .app {
+    width: min(100%, 500px);
+    margin: 0 auto;
+    padding: 26px 18px 48px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .brand {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+
+  .today-date {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .hero {
+    background: rgba(255, 253, 252, 0.9);
+    border: 1px solid var(--border);
+    border-radius: 26px;
+    padding: 26px 22px 22px;
+    box-shadow: var(--shadow);
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
+  }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(28px, 8vw, 38px);
+    line-height: 1.25;
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .hero-copy {
+    margin: 12px 0 22px;
+    color: var(--muted);
+    line-height: 1.65;
+    font-size: 14px;
+  }
+
+  .primary-btn,
+  .secondary-btn,
+  .ghost-btn {
+    border: none;
+    border-radius: 14px;
+    min-height: 50px;
+    padding: 0 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+
+  .primary-btn:active,
+  .secondary-btn:active,
+  .ghost-btn:active { transform: scale(0.985); }
+
+  .primary-btn {
+    background: var(--gold);
+    color: white;
+    width: 100%;
+  }
+
+  .secondary-btn {
+    background: var(--green-soft);
+    color: var(--green);
+    width: 100%;
+  }
+
+  .ghost-btn {
+    background: var(--surface-soft);
+    color: var(--ink);
+  }
+
+  .quick-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    margin-top: 16px;
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+  }
+
+  .quick-stat {
+    text-align: center;
+    padding: 0 6px;
+  }
+
+  .quick-stat + .quick-stat { border-left: 1px solid var(--border); }
+
+  .quick-value {
+    font-family: var(--font-display);
+    font-size: 23px;
+    font-weight: 600;
+  }
+
+  .quick-label {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .section {
+    margin-top: 26px;
+  }
+
+  .section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 0 4px 10px;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .section-note {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .card {
+    background: rgba(255, 253, 252, 0.92);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 24px rgba(55, 48, 31, 0.04);
+  }
+
+  .calendar-card { padding: 18px 14px 14px; }
+
+  .cal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 13px;
+    padding: 0 4px;
+  }
+
+  .cal-month {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .cal-nav { display: flex; gap: 6px; }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    font-size: 18px;
+  }
+
+  .weekdays,
+  .days-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .weekdays span {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    padding-bottom: 7px;
+  }
+
+  .days-grid { row-gap: 5px; }
+
+  .day-cell {
+    aspect-ratio: 1;
+    margin: 2px;
+    border-radius: 11px;
+    display: grid;
+    place-items: center;
+    color: var(--ink);
+    border: 1px solid transparent;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .day-cell.empty { visibility: hidden; }
+  .day-cell.today { border-color: var(--gold); }
+  .day-cell.future { color: #C7C0AF; cursor: default; }
+  .day-cell.done {
+    background: var(--green-soft);
+    color: var(--green);
+  }
+  .day-cell.done svg { width: 16px; height: 16px; }
+
+  .review-card { padding: 20px; }
+
+  .review-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .review-item {
+    text-align: center;
+    background: var(--surface-soft);
+    border-radius: 14px;
+    padding: 14px 8px;
+  }
+
+  .review-value {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .review-label {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  .review-copy {
+    margin: 16px 2px 0;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--muted);
+  }
+
+  .footer-note {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.6;
+    padding: 22px 6px 0;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(39, 48, 38, 0.34);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease;
+    z-index: 20;
+  }
+
+  .overlay.open { opacity: 1; pointer-events: auto; }
+
+  .sheet {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    width: min(100%, 500px);
+    max-height: 88vh;
+    overflow-y: auto;
+    transform: translate(-50%, 100%);
+    transition: transform .24s ease;
+    background: var(--surface);
+    border-radius: 26px 26px 0 0;
+    padding: 20px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+    z-index: 21;
+    box-shadow: 0 -18px 50px rgba(25, 32, 24, 0.16);
+  }
+
+  .sheet.open { transform: translate(-50%, 0); }
+
+  .sheet-handle {
+    width: 42px;
+    height: 4px;
+    border-radius: 99px;
+    background: var(--border);
+    margin: 0 auto 16px;
+  }
+
+  .sheet-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    gap: 14px;
+  }
+
+  .sheet-title {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .close-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: var(--surface-soft);
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .view-block {
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .view-label {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .view-value {
+    font-size: 15px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .view-empty { color: #A8AA9F; }
+
+  .sheet-actions {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .field { margin-bottom: 18px; }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .field .optional {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 500;
+    margin-left: 5px;
+  }
+
+  .field input,
+  .field textarea {
+    width: 100%;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    border-radius: 14px;
+    padding: 13px 14px;
+    outline: none;
+  }
+
+  .field input:focus,
+  .field textarea:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(183, 134, 62, 0.12);
+  }
+
+  .field textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.65;
+  }
+
+  .time-chips {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .time-chip {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--ink);
+    border-radius: 12px;
+    min-height: 42px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .time-chip.active {
+    border-color: var(--gold);
+    background: var(--gold-soft);
+    color: #7C5825;
+  }
+
+  .custom-time {
+    display: none;
+    margin-top: 10px;
+  }
+
+  .custom-time.show { display: block; }
+
+  .error {
+    display: none;
+    color: var(--danger);
+    font-size: 11px;
+    margin-top: 7px;
+  }
+
+  .delete-btn {
+    border: none;
+    background: transparent;
+    color: var(--danger);
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 8px;
+    font-size: 12px;
+  }
+
+  @media (max-width: 380px) {
+    .app { padding-left: 14px; padding-right: 14px; }
+    .hero { padding-left: 18px; padding-right: 18px; }
+    .time-chips { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+  <main class="app">
+    <div class="topbar">
+      <div class="brand">靈修紀錄</div>
+      <div class="today-date" id="todayDate"></div>
+    </div>
+
+    <section class="hero">
+      <div class="eyebrow">TODAY</div>
+      <h1 id="heroTitle">今天，留一點時間給自己。</h1>
+      <div class="hero-copy" id="heroCopy">不用很多，先從一段安靜的時間開始。</div>
+      <button class="primary-btn" id="todayButton">開始今日靈修</button>
+
+      <div class="quick-stats">
+        <div class="quick-stat">
+          <div class="quick-value" id="streakStat">0</div>
+          <div class="quick-label">連續天數</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-value" id="monthDaysStat">0</div>
+          <div class="quick-label">本月天數</div>
+        </div>
+        <div class="quick-stat">
+          <div class="quick-value" id="monthMinutesStat">0</div>
+          <div class="quick-label">本月分鐘</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="section-title">月曆</div>
+        <div class="section-note">點日期查看紀錄</div>
+      </div>
+      <div class="card calendar-card">
+        <div class="cal-header">
+          <div class="cal-month" id="calMonth"></div>
+          <div class="cal-nav">
+            <button class="icon-btn" id="prevMonth" aria-label="上個月">‹</button>
+            <button class="icon-btn" id="nextMonth" aria-label="下個月">›</button>
+          </div>
+        </div>
+        <div class="weekdays">
+          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div class="days-grid" id="daysGrid"></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div class="section-title">本月回顧</div>
+        <div class="section-note" id="reviewMonthLabel"></div>
+      </div>
+      <div class="card review-card">
+        <div class="review-grid">
+          <div class="review-item">
+            <div class="review-value" id="reviewDays">0</div>
+            <div class="review-label">靈修天數</div>
+          </div>
+          <div class="review-item">
+            <div class="review-value" id="reviewTime">0分</div>
+            <div class="review-label">累計時間</div>
+          </div>
+          <div class="review-item">
+            <div class="review-value" id="reviewAvg">0分</div>
+            <div class="review-label">平均每次</div>
+          </div>
+        </div>
+        <div class="review-copy" id="reviewCopy">這個月還沒有紀錄，從今天開始就好。</div>
+      </div>
+    </section>
+
+    <div class="footer-note" id="storageNote">紀錄目前儲存在這個瀏覽器中。</div>
+  </main>
+
+  <div class="overlay" id="overlay"></div>
+  <section class="sheet" id="sheet" aria-modal="true" role="dialog">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <div class="sheet-title" id="sheetTitle">今天</div>
+      <button class="close-btn" id="closeSheet" aria-label="關閉">✕</button>
+    </div>
+
+    <div id="viewMode" style="display:none;">
+      <div class="view-block">
+        <div class="view-label">今日主題／經文</div>
+        <div class="view-value" id="viewTopic"></div>
+      </div>
+      <div class="view-block">
+        <div class="view-label">聆聽歌曲</div>
+        <div class="view-value" id="viewSong"></div>
+      </div>
+      <div class="view-block">
+        <div class="view-label">靈修時間</div>
+        <div class="view-value" id="viewMinutes"></div>
+      </div>
+      <div class="view-block">
+        <div class="view-label">今日電波／心得</div>
+        <div class="view-value" id="viewNote"></div>
+      </div>
+      <div class="sheet-actions">
+        <button class="secondary-btn" id="editButton">編輯紀錄</button>
+      </div>
+    </div>
+
+    <form id="editMode" style="display:none;" novalidate>
+      <div class="field">
+        <label for="topicInput">今日主題／經文 <span class="optional">可選填</span></label>
+        <input id="topicInput" type="text" placeholder="例如：馬太福音 6:34">
+      </div>
+
+      <div class="field">
+        <label for="songInput">聆聽歌曲 <span class="optional">可選填</span></label>
+        <input id="songInput" type="text" placeholder="今天聽的詩歌或音樂">
+      </div>
+
+      <div class="field">
+        <label>靈修時間</label>
+        <div class="time-chips" id="timeChips">
+          <button type="button" class="time-chip" data-minutes="5">5 分</button>
+          <button type="button" class="time-chip" data-minutes="10">10 分</button>
+          <button type="button" class="time-chip" data-minutes="15">15 分</button>
+          <button type="button" class="time-chip" data-minutes="20">20 分</button>
+          <button type="button" class="time-chip" data-minutes="25">25 分</button>
+          <button type="button" class="time-chip" data-minutes="30">30 分</button>
+          <button type="button" class="time-chip" data-minutes="custom">自訂</button>
+        </div>
+        <div class="custom-time" id="customTimeWrap">
+          <input id="customTimeInput" type="number" min="1" max="1440" inputmode="numeric" placeholder="輸入分鐘數">
+        </div>
+        <div class="error" id="timeError">請選擇或輸入靈修時間</div>
+      </div>
+
+      <div class="field">
+        <label for="noteInput">今日電波／心得 <span class="optional">可選填</span></label>
+        <textarea id="noteInput" placeholder="今天收到的提醒、感動、想法或想記下的話……"></textarea>
+      </div>
+
+      <div class="sheet-actions">
+        <button type="submit" class="primary-btn" id="saveButton">儲存紀錄</button>
+        <button type="button" class="delete-btn" id="deleteButton" style="display:none;">刪除這筆紀錄</button>
+      </div>
+    </form>
+  </section>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Data layer ----------
+  // 目前先使用 localStorage。未來接 Supabase 時，只需要替換這一區。
+  var STORAGE_KEY = 'spiritual_journal_v2';
+  var LEGACY_KEY = 'spiritual_checkins_v1';
+
+  function loadData() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw) || {};
+
+      var legacyRaw = localStorage.getItem(LEGACY_KEY);
+      if (!legacyRaw) return {};
+
+      var legacy = JSON.parse(legacyRaw) || {};
+      var migrated = {};
+      Object.keys(legacy).forEach(function (date) {
+        var item = legacy[date] || {};
+        migrated[date] = {
+          topic: item.topic || '',
+          song: item.song || '',
+          minutes: getMinutes(item),
+          note: item.note || item.wave || '',
+          savedAt: item.savedAt || new Date().toISOString()
+        };
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      return migrated;
+    } catch (err) {
+      return {};
+    }
+  }
+
+  function persistData() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  var data = loadData();
+
+  // ---------- Date helpers ----------
+  function pad(n) { return n < 10 ? '0' + n : String(n); }
+  function dateKey(y, m, d) { return y + '-' + pad(m + 1) + '-' + pad(d); }
+  function todayParts() {
+    var now = new Date();
+    return { y: now.getFullYear(), m: now.getMonth(), d: now.getDate() };
+  }
+  function todayKey() {
+    var t = todayParts();
+    return dateKey(t.y, t.m, t.d);
+  }
+  function keyToDate(key) {
+    var p = key.split('-').map(Number);
+    return new Date(p[0], p[1] - 1, p[2]);
+  }
+  function getMinutes(entry) {
+    if (!entry) return 0;
+    if (typeof entry.minutes === 'number' && isFinite(entry.minutes)) return entry.minutes;
+    if (entry.time) {
+      var match = /^(\d+)\s*分/.exec(entry.time);
+      if (match) return parseInt(match[1], 10) || 0;
+    }
+    return 0;
+  }
+
+  var monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  var weekNames = ['週日','週一','週二','週三','週四','週五','週六'];
+  var view = todayParts();
+  var currentDateKey = null;
+  var selectedMinutes = null;
+
+  // ---------- Elements ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var todayButton = $('todayButton');
+  var overlay = $('overlay');
+  var sheet = $('sheet');
+  var viewMode = $('viewMode');
+  var editMode = $('editMode');
+
+  // ---------- UI helpers ----------
+  var checkIcon = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function formatLongDate(key) {
+    var d = keyToDate(key);
+    var isToday = key === todayKey();
+    var label = (d.getMonth() + 1) + '月' + d.getDate() + '日・' + weekNames[d.getDay()];
+    return isToday ? '今天・' + label : label;
+  }
+
+  function formatMinutesShort(mins) {
+    mins = mins || 0;
+    if (mins >= 60) {
+      var h = Math.floor(mins / 60);
+      var r = mins % 60;
+      return r ? h + '時' + r + '分' : h + '時';
+    }
+    return mins + '分';
+  }
+
+  function computeStreak() {
+    var t = todayParts();
+    var cursor = new Date(t.y, t.m, t.d);
+    if (!data[todayKey()]) cursor.setDate(cursor.getDate() - 1);
+
+    var count = 0;
+    while (true) {
+      var key = dateKey(cursor.getFullYear(), cursor.getMonth(), cursor.getDate());
+      if (!data[key]) break;
+      count++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return count;
+  }
+
+  function monthStats(y, m) {
+    var days = 0;
+    var minutes = 0;
+    Object.keys(data).forEach(function (key) {
+      var parts = key.split('-').map(Number);
+      if (parts[0] === y && parts[1] - 1 === m) {
+        days++;
+        minutes += getMinutes(data[key]);
+      }
+    });
+    return {
+      days: days,
+      minutes: minutes,
+      avg: days ? Math.round(minutes / days) : 0
+    };
+  }
+
+  function renderTop() {
+    var t = todayParts();
+    var d = new Date(t.y, t.m, t.d);
+    $('todayDate').textContent = (t.m + 1) + '月' + t.d + '日・' + weekNames[d.getDay()];
+
+    var done = !!data[todayKey()];
+    $('heroTitle').textContent = done ? '今天的靈修，已經留下來了。' : '今天，留一點時間給自己。';
+    $('heroCopy').textContent = done ? '可以回來看看今天記下的內容，也可以隨時修改。' : '不用很多，先從一段安靜的時間開始。';
+    todayButton.textContent = done ? '查看今日紀錄' : '開始今日靈修';
+    todayButton.className = done ? 'secondary-btn' : 'primary-btn';
+
+    var ms = monthStats(t.y, t.m);
+    $('streakStat').textContent = computeStreak();
+    $('monthDaysStat').textContent = ms.days;
+    $('monthMinutesStat').textContent = ms.minutes;
+  }
+
+  function renderCalendar() {
+    $('calMonth').textContent = view.y + ' 年 ' + monthNames[view.m];
+    var grid = $('daysGrid');
+    grid.innerHTML = '';
+
+    var firstDay = new Date(view.y, view.m, 1).getDay();
+    var daysInMonth = new Date(view.y, view.m + 1, 0).getDate();
+    var t = todayParts();
+    var todayDate = new Date(t.y, t.m, t.d);
+
+    for (var i = 0; i < firstDay; i++) {
+      var empty = document.createElement('div');
+      empty.className = 'day-cell empty';
+      grid.appendChild(empty);
+    }
+
+    for (var day = 1; day <= daysInMonth; day++) {
+      var key = dateKey(view.y, view.m, day);
+      var thisDate = new Date(view.y, view.m, day);
+      var isFuture = thisDate > todayDate;
+      var cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'day-cell';
+      if (key === todayKey()) cell.classList.add('today');
+      if (isFuture) cell.classList.add('future');
+      if (data[key]) cell.classList.add('done');
+
+      cell.innerHTML = data[key] ? checkIcon : String(day);
+      cell.disabled = isFuture;
+      if (!isFuture) {
+        cell.addEventListener('click', function (selectedKey) {
+          return function () { openRecord(selectedKey); };
+        }(key));
+      }
+      grid.appendChild(cell);
+    }
+  }
+
+  function renderReview() {
+    var stats = monthStats(view.y, view.m);
+    $('reviewMonthLabel').textContent = view.y + '年' + monthNames[view.m];
+    $('reviewDays').textContent = stats.days;
+    $('reviewTime').textContent = formatMinutesShort(stats.minutes);
+    $('reviewAvg').textContent = formatMinutesShort(stats.avg);
+
+    if (!stats.days) {
+      $('reviewCopy').textContent = '這個月還沒有紀錄，從今天開始就好。';
+    } else if (stats.days === 1) {
+      $('reviewCopy').textContent = '這個月已留下 1 次靈修紀錄，累計 ' + formatMinutesShort(stats.minutes) + '。';
+    } else {
+      $('reviewCopy').textContent = '這個月已留下 ' + stats.days + ' 次靈修紀錄，累計 ' + formatMinutesShort(stats.minutes) + '，平均每次 ' + formatMinutesShort(stats.avg) + '。';
+    }
+  }
+
+  function render() {
+    renderTop();
+    renderCalendar();
+    renderReview();
+  }
+
+  function openSheet() {
+    overlay.classList.add('open');
+    sheet.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSheet() {
+    overlay.classList.remove('open');
+    sheet.classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(function () {
+      currentDateKey = null;
+      resetTimeSelection();
+    }, 220);
+  }
+
+  function emptyOr(value) {
+    return value ? value : '—';
+  }
+
+  function showView(key) {
+    var entry = data[key];
+    if (!entry) return showEdit(key);
+
+    currentDateKey = key;
+    $('sheetTitle').textContent = formatLongDate(key);
+    $('viewTopic').textContent = emptyOr(entry.topic);
+    $('viewSong').textContent = emptyOr(entry.song);
+    $('viewMinutes').textContent = getMinutes(entry) + ' 分鐘';
+    $('viewNote').textContent = emptyOr(entry.note);
+
+    ['viewTopic','viewSong','viewNote'].forEach(function (id) {
+      $(id).classList.toggle('view-empty', $(id).textContent === '—');
+    });
+
+    viewMode.style.display = 'block';
+    editMode.style.display = 'none';
+    openSheet();
+  }
+
+  function resetTimeSelection() {
+    selectedMinutes = null;
+    document.querySelectorAll('.time-chip').forEach(function (chip) {
+      chip.classList.remove('active');
+    });
+    $('customTimeWrap').classList.remove('show');
+    $('customTimeInput').value = '';
+    $('timeError').style.display = 'none';
+  }
+
+  function selectTime(value) {
+    resetTimeSelection();
+    selectedMinutes = value;
+
+    var chips = document.querySelectorAll('.time-chip');
+    chips.forEach(function (chip) {
+      if (String(chip.dataset.minutes) === String(value)) chip.classList.add('active');
+    });
+
+    if (value === 'custom') {
+      $('customTimeWrap').classList.add('show');
+      setTimeout(function () { $('customTimeInput').focus(); }, 30);
+    }
+  }
+
+  function showEdit(key) {
+    currentDateKey = key;
+    var entry = data[key] || {};
+    $('sheetTitle').textContent = data[key] ? '編輯・' + formatLongDate(key) : formatLongDate(key);
+    $('topicInput').value = entry.topic || '';
+    $('songInput').value = entry.song || '';
+    $('noteInput').value = entry.note || '';
+    $('deleteButton').style.display = data[key] ? 'block' : 'none';
+
+    resetTimeSelection();
+    var mins = getMinutes(entry);
+    var quick = [5,10,15,20,25,30];
+    if (mins) {
+      if (quick.indexOf(mins) !== -1) selectTime(mins);
+      else {
+        selectTime('custom');
+        $('customTimeInput').value = mins;
+      }
+    }
+
+    viewMode.style.display = 'none';
+    editMode.style.display = 'block';
+    openSheet();
+  }
+
+  function openRecord(key) {
+    if (data[key]) showView(key);
+    else showEdit(key);
+  }
+
+  // ---------- Events ----------
+  todayButton.addEventListener('click', function () {
+    openRecord(todayKey());
+  });
+
+  $('editButton').addEventListener('click', function () {
+    if (currentDateKey) showEdit(currentDateKey);
+  });
+
+  $('closeSheet').addEventListener('click', closeSheet);
+  overlay.addEventListener('click', closeSheet);
+
+  document.querySelectorAll('.time-chip').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      var value = chip.dataset.minutes;
+      selectTime(value === 'custom' ? 'custom' : parseInt(value, 10));
+    });
+  });
+
+  $('editMode').addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (!currentDateKey) return;
+
+    var minutes = 0;
+    if (selectedMinutes === 'custom') {
+      minutes = parseInt($('customTimeInput').value, 10);
+    } else if (typeof selectedMinutes === 'number') {
+      minutes = selectedMinutes;
+    }
+
+    if (!minutes || minutes < 1) {
+      $('timeError').style.display = 'block';
+      return;
+    }
+
+    $('timeError').style.display = 'none';
+    data[currentDateKey] = {
+      topic: $('topicInput').value.trim(),
+      song: $('songInput').value.trim(),
+      minutes: minutes,
+      note: $('noteInput').value.trim(),
+      savedAt: new Date().toISOString()
+    };
+
+    persistData();
+    render();
+    showView(currentDateKey);
+  });
+
+  $('deleteButton').addEventListener('click', function () {
+    if (!currentDateKey || !data[currentDateKey]) return;
+    if (!window.confirm('確定要刪除這筆靈修紀錄嗎？')) return;
+    delete data[currentDateKey];
+    persistData();
+    closeSheet();
+    render();
+  });
+
+  $('prevMonth').addEventListener('click', function () {
+    view.m--;
+    if (view.m < 0) { view.m = 11; view.y--; }
+    renderCalendar();
+    renderReview();
+  });
+
+  $('nextMonth').addEventListener('click', function () {
+    view.m++;
+    if (view.m > 11) { view.m = 0; view.y++; }
+    renderCalendar();
+    renderReview();
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && sheet.classList.contains('open')) closeSheet();
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
