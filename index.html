@@ -3,24 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FAF7F0">
+<meta name="theme-color" content="#FFFAF2">
 <title>靈修紀錄 2.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #FAF7F0;
+    --bg: #FFFAF2;
     --surface: #FFFFFF;
-    --surface-soft: #F3EFE5;
-    --ink: #2D3329;
-    --muted: #707568;
-    --gold: #B7863A;
-    --gold-soft: #F0E1C5;
-    --green: #5F785A;
-    --green-soft: #DBE6D6;
+    --surface-soft: #F8E8CC;
+    --ink: #533D29;
+    --muted: #82715E;
+    --gold: #C28B3D;
+    --gold-soft: #F8E8CC;
+    --green: #607653;
+    --green-soft: #E3EBDD;
     --danger: #AC4931;
-    --border: #E5DFD0;
+    --border: #EADCC8;
     --shadow: 0 12px 32px rgba(55, 48, 31, 0.035);
     --radius-lg: 22px;
     --radius-md: 16px;
@@ -116,15 +116,15 @@
   .ghost-btn:active { transform: scale(0.985); }
 
   .primary-btn {
-    background: #E9B75F;
-    color: #513619;
+    background: #EDBE73;
+    color: #533D29;
     font-size: 19px;
     width: 100%;
   }
 
   .secondary-btn {
-    background: #E9B75F;
-    color: #513619;
+    background: var(--surface-soft);
+    color: #533D29;
     font-size: 19px;
     width: 100%;
   }
@@ -253,7 +253,7 @@
 
   .day-cell.empty { visibility: hidden; }
   .day-cell.today { border-color: var(--gold); }
-  .day-cell.future { color: #C7C4B8; cursor: default; }
+  .day-cell.future { color: #C8BBA9; cursor: default; }
   .day-cell.done {
     background: var(--green-soft);
     color: var(--green);
@@ -305,7 +305,7 @@
   .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(39, 48, 38, 0.30);
+    background: rgba(83, 61, 41, 0.30);
     opacity: 0;
     pointer-events: none;
     transition: opacity .2s ease;
@@ -327,7 +327,7 @@
     border-radius: 26px 26px 0 0;
     padding: 20px 18px calc(24px + env(safe-area-inset-bottom, 0px));
     z-index: 21;
-    box-shadow: 0 -18px 50px rgba(25, 32, 24, 0.16);
+    box-shadow: 0 -18px 50px rgba(83, 61, 41, 0.14);
   }
 
   .sheet.open { transform: translate(-50%, 0); }
@@ -381,7 +381,7 @@
     white-space: pre-wrap;
   }
 
-  .view-empty { color: #909487; }
+  .view-empty { color: #82715E; }
 
   .sheet-actions {
     display: grid;
